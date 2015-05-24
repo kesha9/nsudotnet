@@ -6,52 +6,52 @@ namespace Toktassyn.Nsudotnet.LinesCounter
 {
     class Program
     {
-           public static int Count(string dir, string[] typeOfFiles)
+           public static int Count(string directori, string[] typeOfFiles)
         {
             bool multiRowsComment = false;
-            string[] files = Directory.GetFiles(dir);
-            string[] directories = Directory.GetDirectories(dir);
+            string[] files = Directory.GetFiles(directori);
+            string[] directories = Directory.GetDirectories(directori);
 
-            int count = directories.Sum(directory => Count(directory, typeOfFiles));
+            int count = directories.Sum(dir => Count(dir, typeOfFiles));
 
             foreach (string type in typeOfFiles)
             {
-                foreach (string f in files.Where(f => f.EndsWith(type)))
+                foreach (string tr in files.Where(tr => tr.EndsWith(type)))
                 {
-                    using (StreamReader fileReader = new StreamReader(f))
+                    using (StreamReader reader = new StreamReader(tr))
                     {
-                        string line = null;
-                        while ((line = fileReader.ReadLine()) != null)
+                        string str = null;
+                        while ((str = reader.ReadLine()) != null)
                         {
-                            line = line.Trim();
+                            str = str.Trim();
 
-                            if (line.Contains("/*") && !line.StartsWith("/*"))
+                            if (str.Contains("/*") && !str.StartsWith("/*"))
                             {
                                 multiRowsComment = true;
                                 count++;
                                 continue;
                             }
 
-                            if (line.Contains("*/") && !line.EndsWith("*/") && multiRowsComment)
+                            if (str.Contains("*/") && !str.EndsWith("*/") && multiRowsComment)
                             {
                                 multiRowsComment = false;
                                 count++;
                                 continue;
                             }
 
-                            if (line.StartsWith("/*"))
+                            if (str.StartsWith("/*"))
                             {
                                 multiRowsComment = true;
                                 continue;
                             }
 
-                            if (line.StartsWith("*/") && multiRowsComment)
+                            if (str.StartsWith("*/") && multiRowsComment)
                             {
                                 multiRowsComment = false;
                                 continue;
                             }
 
-                            if (line.StartsWith("//") || multiRowsComment || line.Length == 0)
+                            if (str.StartsWith("//") || multiRowsComment || str.Length == 0)
                             {
                                 continue;
                             }
