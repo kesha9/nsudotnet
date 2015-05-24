@@ -1,77 +1,89 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Toktassyn.Nsudotnet.LinesCounter
 {
     class Program
     {
-           public static int Count(string directory, string[] typeOfFiles)
+        /// <summary>
+        /// first element of args is the directory
+        /// second and subsequent - file extensions
+        /// </summary>
+        /// <param name="args"></param>
+        public static void Main(string[] args)
         {
-            bool multiRowsComment = false;
-            string[] files = Directory.GetFiles(directory);
-            string[] directories = Directory.GetDirectories(directory);
-
-            int count = directories.Sum(dir => Count(dir, typeOfFiles));
-
-            foreach (string type in typeOfFiles)
+            string ext;
+            switch (args.Length)
             {
-                foreach (string tr in files.Where(tr => tr.EndsWith(type)))
-                {
-                    using (StreamReader reader = new StreamReader(tr))
+                case 0:
+                    string dir;
+                    do
                     {
-                        string str = null;
-                        while ((str = reader.ReadLine()) != null)
-                        {
-                            str = str.Trim();
-
-                            if (str.Contains("/*") && !str.StartsWith("/*"))
-                            {
-                                multiRowsComment = true;
-                                count++;
-                                continue;
-                            }
-
-                            if (str.Contains("*/") && !str.EndsWith("*/") && multiRowsComment)
-                            {
-                                multiRowsComment = false;
-                                count++;
-                                continue;
-                            }
-
-                            if (str.StartsWith("/*"))
-                            {
-                                multiRowsComment = true;
-                                continue;
-                            }
-
-                            if (str.StartsWith("*/") && multiRowsComment)
-                            {
-                                multiRowsComment = false;
-                                continue;
-                            }
-
-                            if (str.StartsWith("//") || multiRowsComment || str.Length == 0)
-                            {
-                                continue;
-                            }
-
-                            count++;
-                        } 
+                        Console.WriteLine("You are forgot enter the directory. Please enter the directory:");
                     }
-                }
+                    while (!string.IsNullOrEmpty(dir = Console.ReadLine()));
+
+                    do
+                    {
+                        Console.WriteLine("You are forgot the file extension. Please enter the file extension: " +
+                  "\n Format: \".<extension> \"");
+                    } while (!string.IsNullOrEmpty(ext = Console.ReadLine()));
+
+                    if (dir != null)
+                    {
+                        Console.WriteLine("{0} line(s)", CountInDirectory(new DirectoryInfo(dir), ext));
+                    }
+                    break;
+                case 1:
+                    do
+                    {
+                        Console.WriteLine("You are forgot the file extension. Please enter the file extension: " +
+                  "\n Format: \".<extension> \"");
+                    } while (!string.IsNullOrEmpty(ext = Console.ReadLine()));
+                    Console.WriteLine("{0} line(s)", CountInDirectory(new DirectoryInfo(args[0]), ext));
+                    break;
+                default:
+                    Console.WriteLine("{0} line(s)", CountInDirectory(new DirectoryInfo(args[0]), args[1]));
+                    break;
+            }
+            Console.ReadKey();
+        }
+
+
+        private static int CountInDirectory(DirectoryInfo directoryInfo, string extension)
+        {
+            return directoryInfo.EnumerateFiles(extension).Sum(file => CountInFile(file))
+            + directoryInfo.EnumerateDirectories().Sum(dir => CountInDirectory(dir, extension));
+        }
+
+        private static int CountInFile(FileInfo fileInfo)
+        {
+            var count = 0;
+            using (var streamReader = new StreamReader(fileInfo.OpenRead(), Encoding.UTF8))
+            {
+                var input = streamReader.ReadToEnd();
+                const string lineComments = @"//(.*?)\r?\n";
+                const string blockComments = @"/\*(.*?)\*/";
+                const string strings = @"""((\\[^\n]|[^""\n])*)""";
+                const string verbatimStrings = @"@(""[^""]*"")+";
+
+                var noCommentsAndEmptyLines = Regex.Replace(input, blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings,
+                    me =>
+                    {
+                        if (me.Value.StartsWith("/*") || me.Value.StartsWith("//"))
+                            return "";// Keep the literal strings
+                        return me.Value;
+                    }, RegexOptions.Singleline);
+
+                noCommentsAndEmptyLines = Regex.Replace(noCommentsAndEmptyLines, @"^\s+$[\r\n]*", "", RegexOptions.Multiline);
+                Console.Write(noCommentsAndEmptyLines);
+
+                count += noCommentsAndEmptyLines.Split('\n').Length - 1;
             }
             return count;
         }
-            
-            static void Main(string[] args)
-        {
-            string curdir = args[0];
-            int result = Count(curdir, args.Skip(1).ToArray());
-            Console.WriteLine(result);
-            Console.ReadKey();
-        }
     }
-    }
+}
