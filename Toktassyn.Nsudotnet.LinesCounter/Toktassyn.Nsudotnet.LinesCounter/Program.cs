@@ -6,13 +6,13 @@ namespace Toktassyn.Nsudotnet.LinesCounter
 {
     class Program
     {
-           public static int CountLines(string dir, string[] typeOfFiles)
+           public static int Count(string dir, string[] typeOfFiles)
         {
             bool multiRowsComment = false;
-            string[] directories = Directory.GetDirectories(dir);
             string[] files = Directory.GetFiles(dir);
+            string[] directories = Directory.GetDirectories(dir);
 
-            int count = directories.Sum(directory => CountLines(directory, typeOfFiles));
+            int count = directories.Sum(directory => Count(directory, typeOfFiles));
 
             foreach (string type in typeOfFiles)
             {
@@ -66,8 +66,8 @@ namespace Toktassyn.Nsudotnet.LinesCounter
             
             static void Main(string[] args)
         {
-            string curdir = Directory.GetCurrentDirectory();
-            int result = CountLines(curdir, args);
+            string curdir = args[0];
+            int result = Count(curdir, args.Skip(1).ToArray());
             Console.WriteLine(result);
             Console.ReadKey();
         }
