@@ -3,10 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-
-namespace Toktassyn.Nsudotnet.LinesCounter
+namespace LinesCounter
 {
-    class Program
+    class LinesCounter
     {
         /// <summary>
         /// first element of args is the directory
@@ -15,50 +14,27 @@ namespace Toktassyn.Nsudotnet.LinesCounter
         /// <param name="args"></param>
         public static void Main(string[] args)
         {
-            string ext;
-            switch (args.Length)
+            if (args.Length < 2)
             {
-                case 0:
-                    string dir;
-                    do
-                    {
-                        Console.WriteLine("You are forgot enter the directory. Please enter the directory:");
-                    }
-                    while (!string.IsNullOrEmpty(dir = Console.ReadLine()));
-
-                    do
-                    {
-                        Console.WriteLine("You are forgot the file extension. Please enter the file extension: " +
-                  "\n Format: \".<extension> \"");
-                    } while (!string.IsNullOrEmpty(ext = Console.ReadLine()));
-
-                    if (dir != null)
-                    {
-                        Console.WriteLine("{0} line(s)", CountInDirectory(new DirectoryInfo(dir), ext));
-                    }
-                    break;
-                case 1:
-                    do
-                    {
-                        Console.WriteLine("You are forgot the file extension. Please enter the file extension: " +
-                  "\n Format: \".<extension> \"");
-                    } while (!string.IsNullOrEmpty(ext = Console.ReadLine()));
-                    Console.WriteLine("{0} line(s)", CountInDirectory(new DirectoryInfo(args[0]), ext));
-                    break;
-                default:
-                    Console.WriteLine("{0} line(s)", CountInDirectory(new DirectoryInfo(args[0]), args[1]));
-                    break;
+                Console.WriteLine("to few arguments. format: \"<dir>\" \".<ext>\"");
+                return;
             }
+            if (args.Length > 2)
+            {
+                Console.WriteLine("too many arguments. format: \"<dir>\" \".<ext>\"");
+                return;
+            }
+            Console.WriteLine("{0} line(s)", CountInDirectory(new DirectoryInfo(args[0]), args[1]));
             Console.ReadKey();
         }
-
-
+ 
+ 
         private static int CountInDirectory(DirectoryInfo directoryInfo, string extension)
         {
             return directoryInfo.EnumerateFiles(extension).Sum(file => CountInFile(file))
             + directoryInfo.EnumerateDirectories().Sum(dir => CountInDirectory(dir, extension));
         }
-
+ 
         private static int CountInFile(FileInfo fileInfo)
         {
             var count = 0;
@@ -69,18 +45,18 @@ namespace Toktassyn.Nsudotnet.LinesCounter
                 const string blockComments = @"/\*(.*?)\*/";
                 const string strings = @"""((\\[^\n]|[^""\n])*)""";
                 const string verbatimStrings = @"@(""[^""]*"")+";
-
-                var noCommentsAndEmptyLines = Regex.Replace(input, blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings,
+ 
+                var noCommentsAndEmptyLines = Regex.Replace(input,blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings,
                     me =>
                     {
                         if (me.Value.StartsWith("/*") || me.Value.StartsWith("//"))
                             return "";// Keep the literal strings
                         return me.Value;
-                    }, RegexOptions.Singleline);
-
+                    },RegexOptions.Singleline);
+               
                 noCommentsAndEmptyLines = Regex.Replace(noCommentsAndEmptyLines, @"^\s+$[\r\n]*", "", RegexOptions.Multiline);
                 Console.Write(noCommentsAndEmptyLines);
-
+ 
                 count += noCommentsAndEmptyLines.Split('\n').Length - 1;
             }
             return count;
